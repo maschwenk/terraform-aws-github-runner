@@ -2,10 +2,12 @@ import parser from 'cron-parser';
 import moment from 'moment';
 
 export type ScalingDownConfigList = ScalingDownConfig[];
+export type EvictionStrategy = 'newest_first' | 'oldest_first';
 export interface ScalingDownConfig {
   cron: string;
   idleCount: number;
   timeZone: string;
+  evictionStrategy?: EvictionStrategy;
 }
 
 function inPeriod(period: ScalingDownConfig): boolean {
@@ -24,4 +26,13 @@ export function getIdleRunnerCount(scalingDownConfigs: ScalingDownConfigList): n
     }
   }
   return 0;
+}
+
+export function getEvictionStrategy(scalingDownConfigs: ScalingDownConfigList): EvictionStrategy {
+  for (const scalingDownConfig of scalingDownConfigs) {
+    if (inPeriod(scalingDownConfig)) {
+      return scalingDownConfig.evictionStrategy ?? 'oldest_first';
+    }
+  }
+  return 'oldest_first';
 }
