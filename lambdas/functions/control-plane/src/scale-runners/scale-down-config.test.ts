@@ -14,6 +14,7 @@ function getConfig(
   return cronTabs.map((cron) => ({
     cron: cron,
     idleCount: DEFAULT_IDLE_COUNT,
+    // testing
     timeZone: DEFAULT_TIMEZONE,
     evictionStrategy,
   }));
