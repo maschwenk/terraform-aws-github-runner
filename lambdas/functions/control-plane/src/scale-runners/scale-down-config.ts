@@ -1,3 +1,4 @@
+import { createChildLogger } from '@terraform-aws-github-runner/aws-powertools-util';
 import parser from 'cron-parser';
 import moment from 'moment';
 
@@ -9,6 +10,8 @@ export interface ScalingDownConfig {
   timeZone: string;
   evictionStrategy?: EvictionStrategy;
 }
+
+const logger = createChildLogger('scale-down-config.ts');
 
 function inPeriod(period: ScalingDownConfig): boolean {
   const now = moment(new Date());
@@ -31,7 +34,9 @@ export function getIdleRunnerCount(scalingDownConfigs: ScalingDownConfigList): n
 export function getEvictionStrategy(scalingDownConfigs: ScalingDownConfigList): EvictionStrategy {
   for (const scalingDownConfig of scalingDownConfigs) {
     if (inPeriod(scalingDownConfig)) {
-      return scalingDownConfig.evictionStrategy ?? 'oldest_first';
+      const evictionStrategy = scalingDownConfig.evictionStrategy ?? 'oldest_first';
+      logger.debug(`Using evictionStrategy '${evictionStrategy}' for period ${scalingDownConfig.cron}`);
+      return evictionStrategy;
     }
   }
   return 'oldest_first';
