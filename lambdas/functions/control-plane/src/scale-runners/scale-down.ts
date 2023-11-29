@@ -168,6 +168,8 @@ async function evaluateAndRemoveRunners(
             logger.info(`Runner '${ec2Runner.instanceId}' will be kept idle.`);
           } else {
             logger.info(`Runner '${ec2Runner.instanceId}' will be terminated.`);
+            // This is the happy path of Github returning information about the runner
+            // AND us having record of the EC2 instance
             await removeRunner(
               ec2Runner,
               ghRunnersFiltered.map((runner: { id: number }) => runner.id),
@@ -175,8 +177,16 @@ async function evaluateAndRemoveRunners(
           }
         }
       } else {
+        // This is the unhappy path of
+        // We have an EC2 instance that Github currently thinks is dead
+        // Terminations here can interrupt a runner that is currently running a job
         if (bootTimeExceeded(ec2Runner)) {
           logger.info(`Runner '${ec2Runner.instanceId}' is orphaned and will be removed.`);
+          // In the case that we are going to hard terminate an instance,
+          // we want to double check with the API to ensure were not hard terminating
+          // and instance that is actually completely healthy
+          // TODO: Here actually do a *uncached* call to the Github API to ensure its still missing
+          // emphasis on uncached
           terminateOrphan(ec2Runner.instanceId);
         } else {
           logger.debug(`Runner ${ec2Runner.instanceId} has not yet booted.`);
